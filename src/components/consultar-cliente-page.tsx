@@ -124,10 +124,12 @@ export function ConsultarClientePage({ clients: allClients, loans: allLoans, loa
   const filteredList = useMemo(() => {
     if (!canShowList) return [];
 
-    let result = loans.map(loan => {
-        const client = clients.find(c => c.id === loan.clientId);
-        return { loan, client };
-    }).filter(item => item.client !== undefined);
+    let result = loans
+        .filter(loan => loan.status === 'Active' || loan.status === 'Overdue')
+        .map(loan => {
+            const client = clients.find(c => c.id === loan.clientId);
+            return { loan, client };
+        }).filter(item => item.client !== undefined);
 
     // Apply Search
     if (searchTerm) {
