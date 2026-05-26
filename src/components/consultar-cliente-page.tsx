@@ -215,7 +215,8 @@ export function ConsultarClientePage({ clients: allClients, loans: allLoans, loa
 
     const totalBalanceDue = Math.max(0, (totalTerm * weeklyPayment) - actualTotalPaid - assumedPaidAmount);
 
-    const currentLoanWeekDisplay = Math.min(currentWeekSafe, totalTerm);
+    const lastPaymentWeek = (activeLoan.payments || []).reduce((max, p) => Math.max(max, p.weekNumber), 0);
+    const currentLoanWeekDisplay = lastPaymentWeek > 0 ? Math.min(lastPaymentWeek, totalTerm) : 1;
     const promotora = allPromotoras.find(p => p.id === activeLoan.promotoraId);
     const localidad = allLocalidades.find(l => l.id === promotora?.localidadId);
     const plaza = allPlazas.find(p => p.id === localidad?.plazaId);
