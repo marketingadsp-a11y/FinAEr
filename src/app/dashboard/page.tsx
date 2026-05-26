@@ -175,7 +175,7 @@ export default function DashboardPage() {
                     </p>
                 </div>
                 <Badge variant="outline" className="h-6 font-black uppercase text-[9px] tracking-wider border-emerald-500/20 text-emerald-600 bg-emerald-50/50">
-                    Corte: {new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' })}
+                    Datos a la Fecha: {new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </Badge>
             </div>
 
