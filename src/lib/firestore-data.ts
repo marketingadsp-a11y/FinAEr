@@ -193,12 +193,20 @@ export async function getUsers(): Promise<AppUser[]> {
 export async function getAppConfig(): Promise<AppConfig | null> {
     const configRef = doc(db, 'config', 'main');
     try {
+        // Avoid making network calls during build time when keys are not configured or are mock
+        const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+        if (!apiKey || apiKey.includes('mock')) {
+            return null;
+        }
+        
         const configSnap = await getDoc(configRef);
         if (configSnap.exists()) {
             return configSnap.data() as AppConfig;
         }
         return null;
     } catch (err) {
-        return handleFirestoreError(err, configRef.path, 'get');
+        // Log the error but do not throw or crash during static page rendering/build time
+        console.warn(`getAppConfig: Failed to fetch configuration at ${configRef.path}. Returning null.`, err);
+        return null;
     }
 }
