@@ -114,7 +114,7 @@ export function ClientLoansTable({ clientLoans, loanPlans, allLoans, users, plaz
       'Overdue': 'destructive',
       'Paid Off': 'success',
       'Pagado desde CV': 'purple',
-    };
+    } as const;
     return variantMap[status as keyof typeof variantMap] || 'default';
   };
 

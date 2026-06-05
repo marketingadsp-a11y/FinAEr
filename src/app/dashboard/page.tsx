@@ -377,7 +377,7 @@ export default function DashboardPage() {
                                                     </TableCell>
                                                     <TableCell className="text-right pr-6">
                                                         <Button asChild variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-50 hover:text-red-600 rounded-full">
-                                                            <Link href="/dashboard/overdue-portfolio"><ArrowRight className="h-4 w-4" /></Link>
+                                                            <Link href="/dashboard/pendientes"><ArrowRight className="h-4 w-4" /></Link>
                                                         </Button>
                                                     </TableCell>
                                                 </TableRow>

@@ -19,14 +19,14 @@ import { cn } from '@/lib/utils';
 
 const allLinks = [
   { href: '/dashboard', label: 'Dashboard', id: 'dashboard' },
-  { href: '/dashboard/clients', label: 'Clientes', id: 'clients' },
+  { href: '/dashboard/clientes', label: 'Clientes', id: 'clients' },
   { href: '/dashboard/consultar-cliente', label: 'Consultar', id: 'consultarCliente' },
-  { href: '/dashboard/loans', label: 'Préstamos', id: 'loans' },
-  { href: '/dashboard/overdue-portfolio', label: 'Pendientes', id: 'overduePortfolio'},
+  { href: '/dashboard/prestamos', label: 'Préstamos', id: 'loans' },
+  { href: '/dashboard/pendientes', label: 'Pendientes', id: 'overduePortfolio'},
   { href: '/dashboard/cartera-vencida', label: 'Vencida', id: 'carteraVencida'},
-  { href: '/dashboard/wallet', label: 'Bitacora', id: 'wallet' },
+  { href: '/dashboard/bitacora', label: 'Bitacora', id: 'wallet' },
   { href: '/dashboard/control', label: 'Control', id: 'control' },
-  { href: '/dashboard/settings', label: 'Ajustes', id: 'settings' },
+  { href: '/dashboard/ajustes', label: 'Ajustes', id: 'settings' },
 ] as const;
 
 

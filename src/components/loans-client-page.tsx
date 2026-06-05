@@ -753,13 +753,13 @@ export function LoansClientPage({ initialClients, initialLoanPlans, initialPlaza
         
         const totalAbonos = filteredLoans.reduce((sum, loan) => sum + getWeeklyPaymentAmount(loan), 0);
         
-        const footerRow1 = [
+        const footerRow1: any[] = [
             { content: `TOT. CLIENTES: ${filteredLoans.length}`, styles: { fontStyle: 'bold', halign: 'right' } },
             { content: ``, styles: {} },
             { content: `TOTALES: ${formatCurrencySimple(totalAbonos)}`, styles: { fontStyle: 'bold', halign: 'right' } },
         ];
-        const footerRow2 = [{content: 'FALLA', colSpan: 3, styles: {halign: 'right', fontStyle: 'bold', fillColor: '#e0e0e0'}}];
-        const footerRow3 = [{content: 'COBRADO', colSpan: 3, styles: {halign: 'right', fontStyle: 'bold'}}];
+        const footerRow2: any[] = [{content: 'FALLA', colSpan: 3, styles: {halign: 'right', fontStyle: 'bold', fillColor: '#e0e0e0'}}];
+        const footerRow3: any[] = [{content: 'COBRADO', colSpan: 3, styles: {halign: 'right', fontStyle: 'bold'}}];
 
         Array.from({ length: maxWeeksToShow }).forEach((_, i) => {
             const weeklyTotal = filteredLoans.reduce((total, loan) => {
@@ -1107,7 +1107,7 @@ export function LoansClientPage({ initialClients, initialLoanPlans, initialPlaza
                               </TableCell>
                           )}
                           <TableCell className={cn("font-medium sticky z-10 w-[200px] p-2 bg-inherit", appUser?.username === 'Cristobal' ? "left-10" : "left-0")}>
-                            <Link href={`/dashboard/clients/${loan.clientId}`} className="hover:underline">
+                            <Link href={`/dashboard/clientes/${loan.clientId}`} className="hover:underline">
                               {getClientName(loan.clientId)}
                             </Link>
                           </TableCell>
@@ -1189,7 +1189,7 @@ export function LoansClientPage({ initialClients, initialLoanPlans, initialPlaza
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                  <DropdownMenuItem asChild>
-                                    <Link href={`/dashboard/clients/${loan.clientId}`}>Ver Detalles del Cliente</Link>
+                                    <Link href={`/dashboard/clientes/${loan.clientId}`}>Ver Detalles del Cliente</Link>
                                 </DropdownMenuItem>
                                 {appUser?.username === 'Cristobal' && (
                                     <DropdownMenuItem onClick={() => setLoanToPayOff(loan)} className="text-blue-600 font-semibold">

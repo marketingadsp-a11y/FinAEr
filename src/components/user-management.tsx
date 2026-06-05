@@ -52,7 +52,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import type { AppUser, UserPermissions, Plaza, Localidad } from '@/lib/types';
-import { deleteUserAction, saveUserAction } from '@/app/dashboard/settings/actions';
+import { deleteUserAction, saveUserAction } from '@/app/dashboard/ajustes/actions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -537,7 +537,7 @@ export function UserManagement({ users }: UserManagementProps) {
                                     )}>
                                         <FormControl>
                                             <Checkbox
-                                                checked={addUserForm.watch('role') === 'admin' ? true : field.value}
+                                                checked={addUserForm.watch('role') === 'admin' ? true : (field.value as boolean)}
                                                 onCheckedChange={field.onChange}
                                                 className="mt-1"
                                             />
@@ -909,7 +909,7 @@ export function UserManagement({ users }: UserManagementProps) {
                                             field.value || editUserForm.watch('role') === 'admin' ? "bg-blue-500/5 border-blue-500/20" : "bg-background"
                                         )}>
                                             <FormControl>
-                                                <Checkbox checked={editUserForm.watch('role') === 'admin' ? true : field.value} onCheckedChange={field.onChange} />
+                                                <Checkbox checked={editUserForm.watch('role') === 'admin' ? true : (field.value as boolean)} onCheckedChange={field.onChange} />
                                             </FormControl>
                                             <FormLabel className="text-sm font-medium cursor-pointer">{item.label}</FormLabel>
                                         </FormItem>
