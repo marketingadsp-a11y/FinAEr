@@ -20,11 +20,11 @@ export function FloatingDollars() {
 
   useEffect(() => {
     const colorClasses = [
-      'text-emerald-500/20 drop-shadow-[0_0_8px_rgba(16,185,129,0.2)]', // Emerald Green
-      'text-teal-400/20 drop-shadow-[0_0_8px_rgba(45,212,191,0.2)]',    // Teal
-      'text-amber-500/20 drop-shadow-[0_0_8px_rgba(245,158,11,0.2)]',   // Amber Gold
-      'text-blue-500/15 drop-shadow-[0_0_8px_rgba(59,130,246,0.15)]',   // Subtle Blue
-      'text-green-600/20 drop-shadow-[0_0_8px_rgba(22,163,74,0.2)]',    // Pure Green
+      'text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.4)]', // Emerald Green
+      'text-teal-400 drop-shadow-[0_0_10px_rgba(45,212,191,0.4)]',    // Teal
+      'text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.4)]',   // Amber Gold
+      'text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.3)]',    // Blue
+      'text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.4)]',   // Green
     ];
 
     const blurClasses = [
@@ -35,14 +35,14 @@ export function FloatingDollars() {
       'blur-none',
     ];
 
-    const generated: Dollar[] = Array.from({ length: 30 }).map((_, idx) => {
+    const generated: Dollar[] = Array.from({ length: 35 }).map((_, idx) => {
       const left = `${Math.random() * 100}%`;
-      const fontSize = `${1.2 + Math.random() * 2.8}rem`; // between 1.2rem and 4rem
-      const op = 0.05 + Math.random() * 0.18; // between 0.05 and 0.23 opacity
-      const dur = `${8 + Math.random() * 14}s`; // between 8s and 22s
-      const delay = `${Math.random() * 12}s`; // delay up to 12s
-      const rot = `${(Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 360)}deg`; // rotation direction & amount
-      const drift = `${(Math.random() > 0.5 ? 1 : -1) * (20 + Math.random() * 80)}px`; // horizontal drift amount
+      const fontSize = `${1.5 + Math.random() * 3}rem`; // between 1.5rem and 4.5rem
+      const op = 0.12 + Math.random() * 0.23; // between 0.12 and 0.35 opacity
+      const dur = `${10 + Math.random() * 15}s`; // between 10s and 25s
+      const delay = `${Math.random() * 15}s`; // delay up to 15s
+      const rot = `${(Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 360)}deg`;
+      const drift = `${(Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 90)}px`;
       const colorClass = colorClasses[Math.floor(Math.random() * colorClasses.length)];
       const blurClass = blurClasses[Math.floor(Math.random() * blurClasses.length)];
 
@@ -72,11 +72,10 @@ export function FloatingDollars() {
           style={{
             left: dollar.left,
             fontSize: dollar.fontSize,
-            // Pass custom css variables to hook into keyframes
             // @ts-ignore
             '--dur': dollar.dur,
             '--delay': dollar.delay,
-            '--op': dollar.op,
+            '--op': String(dollar.op),
             '--rot': dollar.rot,
             '--drift': dollar.drift,
           }}
