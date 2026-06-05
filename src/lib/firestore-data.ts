@@ -17,8 +17,15 @@ const handleFirestoreError = async (err: any, path: string, operation: SecurityR
     throw err;
 };
 
+// Helper to detect if we are in Next.js build-time pre-rendering
+const isBuildTime = () => {
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    return !apiKey || apiKey.includes('mock');
+};
+
 // Fetch all clients
 export async function getClients(): Promise<Client[]> {
+  if (isBuildTime()) return [];
   const clientsCol = collection(db, 'clients');
   try {
     const clientSnapshot = await getDocs(clientsCol);
@@ -30,6 +37,7 @@ export async function getClients(): Promise<Client[]> {
 
 // Fetch a single client by ID
 export async function getClient(id: string): Promise<Client | null> {
+  if (isBuildTime()) return null;
   const clientRef = doc(db, 'clients', id);
   try {
     const clientSnap = await getDoc(clientRef);
@@ -45,6 +53,7 @@ export async function getClient(id: string): Promise<Client | null> {
 
 // Fetch a single loan by ID
 export async function getLoan(id: string): Promise<Loan | null> {
+  if (isBuildTime()) return null;
   const loanRef = doc(db, 'loans', id);
   try {
     const loanSnap = await getDoc(loanRef);
@@ -60,9 +69,9 @@ export async function getLoan(id: string): Promise<Loan | null> {
   }
 }
 
-
 // Fetch all loans or loans for a specific client
 export async function getLoans(clientId?: string): Promise<Loan[]> {
+    if (isBuildTime()) return [];
     const loansCol = collection(db, 'loans');
     const q = clientId ? query(loansCol, where("clientId", "==", clientId)) : query(loansCol);
     try {
@@ -90,6 +99,7 @@ export async function getLoans(clientId?: string): Promise<Loan[]> {
 
 // Fetch all loan plans
 export async function getLoanPlans(): Promise<LoanPlan[]> {
+  if (isBuildTime()) return [];
   const plansCol = collection(db, 'loanPlans');
   try {
     const planSnapshot = await getDocs(plansCol);
@@ -101,6 +111,7 @@ export async function getLoanPlans(): Promise<LoanPlan[]> {
 
 // Fetch a single loan plan by ID
 export async function getLoanPlan(id: string): Promise<LoanPlan | null> {
+  if (isBuildTime()) return null;
   const planRef = doc(db, 'loanPlans', id);
   try {
     const planSnap = await getDoc(planRef);
@@ -116,6 +127,7 @@ export async function getLoanPlan(id: string): Promise<LoanPlan | null> {
 
 // Fetch wallet
 export async function getWallet(): Promise<Wallet> {
+    if (isBuildTime()) return { id: 'main', balance: 0 };
     const walletRef = doc(db, 'wallet', 'main');
     try {
         const walletSnap = await getDoc(walletRef);
@@ -131,6 +143,7 @@ export async function getWallet(): Promise<Wallet> {
 
 // Fetch all wallet transactions
 export async function getWalletTransactions(): Promise<WalletTransaction[]> {
+    if (isBuildTime()) return [];
     const transactionsCol = collection(db, 'walletTransactions');
     const q = query(transactionsCol, orderBy('date', 'desc'));
     try {
@@ -147,6 +160,7 @@ export async function getWalletTransactions(): Promise<WalletTransaction[]> {
 
 // Fetch all plazas
 export async function getPlazas(): Promise<Plaza[]> {
+  if (isBuildTime()) return [];
   const col = collection(db, 'plazas');
   try {
     const snapshot = await getDocs(col);
@@ -158,6 +172,7 @@ export async function getPlazas(): Promise<Plaza[]> {
 
 // Fetch all localidades
 export async function getLocalidades(): Promise<Localidad[]> {
+  if (isBuildTime()) return [];
   const col = collection(db, 'localidades');
   try {
     const snapshot = await getDocs(col);
@@ -169,6 +184,7 @@ export async function getLocalidades(): Promise<Localidad[]> {
 
 // Fetch all promotoras
 export async function getPromotoras(): Promise<Promotora[]> {
+  if (isBuildTime()) return [];
   const col = collection(db, 'promotoras');
   try {
     const snapshot = await getDocs(col);
@@ -180,6 +196,7 @@ export async function getPromotoras(): Promise<Promotora[]> {
 
 // Fetch all users
 export async function getUsers(): Promise<AppUser[]> {
+    if (isBuildTime()) return [];
     const usersCol = collection(db, 'users');
     try {
         const userSnapshot = await getDocs(usersCol);
@@ -191,14 +208,9 @@ export async function getUsers(): Promise<AppUser[]> {
 
 // Fetch app configuration
 export async function getAppConfig(): Promise<AppConfig | null> {
+    if (isBuildTime()) return null;
     const configRef = doc(db, 'config', 'main');
     try {
-        // Avoid making network calls during build time when keys are not configured or are mock
-        const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-        if (!apiKey || apiKey.includes('mock')) {
-            return null;
-        }
-        
         const configSnap = await getDoc(configRef);
         if (configSnap.exists()) {
             return configSnap.data() as AppConfig;
