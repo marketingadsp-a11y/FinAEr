@@ -182,15 +182,34 @@ export default function DashboardPage() {
             {/* LOGOTIPO HEADER SECTION (Centrado, debajo de la bienvenida) */}
             {config?.logoUrl && (
                 <div className="flex justify-center mb-2">
-                    <div className="w-52 h-52 md:w-60 md:h-60 flex items-center justify-center p-2">
-                        <div className="relative w-full h-full animate-in fade-in zoom-in duration-700">
-                            <Image 
-                                src={config.logoUrl} 
-                                alt="Logo" 
-                                fill
-                                className="object-contain rounded-3xl border-4 border-white animate-glow-green bg-white/80 backdrop-blur-sm p-4 animate-float"
-                                priority
-                            />
+                    <div className="w-72 h-28 md:w-80 md:h-32 flex items-center justify-center p-2">
+                        <div className="relative w-full h-full animate-in fade-in zoom-in duration-700 flex items-center justify-center">
+                            {(() => {
+                                const isVideo = config.logoUrl.split('?')[0].toLowerCase().endsWith('.mp4') || 
+                                                config.logoUrl.includes('.mp4') || 
+                                                config.logoUrl.includes('video') || 
+                                                config.logoUrl.includes('mp4');
+                                if (isVideo) {
+                                    return (
+                                        <video
+                                            src={config.logoUrl}
+                                            autoPlay
+                                            loop
+                                            muted
+                                            playsInline
+                                            className="h-full w-full object-cover rounded-3xl border-4 border-white animate-glow-green bg-white/80 backdrop-blur-sm animate-float animate-pulse"
+                                        />
+                                    );
+                                } else {
+                                    return (
+                                        <img
+                                            src={config.logoUrl}
+                                            alt="Logo"
+                                            className="h-full w-full object-cover rounded-3xl border-4 border-white animate-glow-green bg-white/80 backdrop-blur-sm animate-float"
+                                        />
+                                    );
+                                }
+                            })()}
                         </div>
                     </div>
                 </div>

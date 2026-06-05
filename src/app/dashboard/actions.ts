@@ -95,7 +95,7 @@ export async function deleteLoanAction(loanId: string) {
 
             if (totalPaid > 0) {
                 const walletRef = doc(db, 'wallet', 'main');
-                transaction.update(walletRef, { balance: increment(-totalPaid) });
+                transaction.set(walletRef, { balance: increment(-totalPaid) }, { merge: true });
             }
 
             transaction.delete(loanRef);
@@ -186,7 +186,7 @@ export async function registerPaymentAction(loanId: string, paymentStartDate: Da
                     userId: userId || null,
                 });
                 
-                transaction.update(walletRef, { balance: increment(walletAdjustment) });
+                transaction.set(walletRef, { balance: increment(walletAdjustment) }, { merge: true });
             }
 
             const baseTerm = loanPlan.termInWeeks;
@@ -309,7 +309,7 @@ export async function payOffLoanAction(loanId: string, userId?: string) {
                 clientId: loan.clientId,
                 userId: userId || null,
             });
-            transaction.update(walletRef, { balance: increment(settlementAmount) });
+            transaction.set(walletRef, { balance: increment(settlementAmount) }, { merge: true });
 
             transaction.update(loanRef, {
                 payments: newPayments,
@@ -407,7 +407,7 @@ export async function accumulateAssumedPaymentsAction(loanIds: string[], userId?
             });
 
             if (totalAccumulated > 0) {
-                transaction.update(walletRef, { balance: increment(totalAccumulated) });
+                transaction.set(walletRef, { balance: increment(totalAccumulated) }, { merge: true });
             }
         });
 
@@ -480,7 +480,7 @@ export async function revertPaymentsForWeekAction(loanIds: string[], weekNumber:
                     userId: userId || null
                 });
                 
-                transaction.update(walletRef, { balance: increment(-totalToSubtract) });
+                transaction.set(walletRef, { balance: increment(-totalToSubtract) }, { merge: true });
             }
         });
 

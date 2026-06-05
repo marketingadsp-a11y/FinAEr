@@ -43,7 +43,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Loader2, Image as ImageIcon, Pencil, History, ShieldAlert, Building2, MessageSquare, Sparkles, RefreshCcw, AlertTriangle, Download, Upload, FileJson, User, UserCheck, MapPin, Route, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { deleteAllDataAction, saveLogoAction, saveAppNameAction, accumulateAllSystemPaymentsAction, saveWhatsAppTemplateAction, revertExtraWeekPaymentsAction, importBackupAction, savePlazaWhatsAppTemplatesAction } from "@/app/dashboard/settings/actions";
+import { deleteAllDataAction, saveLogoAction, saveFaviconAction, saveAppNameAction, accumulateAllSystemPaymentsAction, saveWhatsAppTemplateAction, revertExtraWeekPaymentsAction, importBackupAction, savePlazaWhatsAppTemplatesAction } from "@/app/dashboard/settings/actions";
 import { useRouter } from "next/navigation";
 import type { AppConfig, WhatsAppTemplates } from "@/lib/types";
 import { Separator } from "./ui/separator";
@@ -55,6 +55,7 @@ const appNameSchema = z.object({
 });
 const logoFormSchema = z.object({
   logoUrl: z.string().url('URL no válida.').or(z.literal('')),
+  faviconUrl: z.string().url('URL no válida.').or(z.literal('')),
 });
 const whatsappTemplatesSchema = z.object({
   client: z.string().min(1, 'La plantilla para el cliente no puede estar vacía.'),
@@ -107,7 +108,10 @@ export function SettingsClientPage({ initialConfig, mode = 'system' }: SettingsC
 
     const logoForm = useForm<LogoFormValues>({
         resolver: zodResolver(logoFormSchema),
-        defaultValues: { logoUrl: initialConfig?.logoUrl || '' },
+        defaultValues: { 
+            logoUrl: initialConfig?.logoUrl || '',
+            faviconUrl: initialConfig?.faviconUrl || ''
+        },
     });
 
     const whatsappForm = useForm<WhatsappTemplatesFormValues>({
@@ -247,11 +251,14 @@ export function SettingsClientPage({ initialConfig, mode = 'system' }: SettingsC
     const onSaveLogoSubmit = async (values: LogoFormValues) => {
         setIsSaving(true);
         try {
-            const result = await saveLogoAction(values.logoUrl);
-            if (result.success) {
-                toast({ title: 'Actualizado', description: 'Logo guardado.' });
+            const resultLogo = await saveLogoAction(values.logoUrl);
+            const resultFavicon = await saveFaviconAction(values.faviconUrl);
+            if (resultLogo.success && resultFavicon.success) {
+                toast({ title: 'Actualizado', description: 'Identidad visual guardada con éxito.' });
                 router.refresh();
-            } else throw new Error(result.message);
+            } else {
+                throw new Error(resultLogo.message || resultFavicon.message);
+            }
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
         } finally {
@@ -315,22 +322,47 @@ export function SettingsClientPage({ initialConfig, mode = 'system' }: SettingsC
                         <Separator />
 
                         <Form {...logoForm}>
-                            <form onSubmit={logoForm.handleSubmit(onSaveLogoSubmit)} className="space-y-4">
+                            <form onSubmit={logoForm.handleSubmit(onSaveLogoSubmit)} className="space-y-5">
                                 <FormField control={logoForm.control} name="logoUrl" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="font-bold">URL del Logo Corporativo</FormLabel>
-                                        <div className="flex gap-2">
-                                            <div className="relative flex-grow">
-                                                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                <FormControl><Input placeholder="https://..." {...field} className="pl-10" /></FormControl>
-                                            </div>
-                                            <Button type="submit" disabled={isSaving}>
-                                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
-                                            </Button>
+                                        <div className="relative">
+                                            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <FormControl><Input placeholder="https://..." {...field} className="pl-10" /></FormControl>
                                         </div>
+                                        <FormDescription className="text-xs text-muted-foreground">
+                                            Se utiliza en el dashboard, barra lateral e inicio de sesión (admite PNG, JPG, GIF y MP4).
+                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
+
+                                <FormField control={logoForm.control} name="faviconUrl" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="font-bold">URL de Favicon (Icono del Navegador)</FormLabel>
+                                        <div className="relative">
+                                            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <FormControl><Input placeholder="https://..." {...field} className="pl-10" /></FormControl>
+                                        </div>
+                                        <FormDescription className="text-xs text-muted-foreground">
+                                            Se utiliza únicamente como el icono de la pestaña del navegador (admite archivos .ico, .png, .gif, etc.).
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                <div className="flex justify-end pt-2">
+                                    <Button type="submit" disabled={isSaving} className="font-bold">
+                                        {isSaving ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Guardando Identidad...
+                                            </>
+                                        ) : (
+                                            'Guardar Identidad Visual'
+                                        )}
+                                    </Button>
+                                </div>
                             </form>
                         </Form>
                     </CardContent>

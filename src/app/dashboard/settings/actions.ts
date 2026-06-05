@@ -169,7 +169,7 @@ export async function accumulateAllSystemPaymentsAction(userId?: string) {
 
         if (paymentsAccumulatedCount > 0) {
             const walletRef = doc(db, 'wallet', 'main');
-            batch.update(walletRef, { balance: increment(totalAccumulatedAmount) });
+            batch.set(walletRef, { balance: increment(totalAccumulatedAmount) }, { merge: true });
             await batch.commit();
         }
 
@@ -292,6 +292,17 @@ export async function saveLogoAction(logoUrl: string) {
         return { success: true, message: 'Logo actualizado con éxito.' };
     } catch (error: any) {
         return { success: false, message: `Error al guardar el logo: ${error.message}` };
+    }
+}
+
+export async function saveFaviconAction(faviconUrl: string) {
+    try {
+        const configRef = doc(db, 'config', 'main');
+        await setDoc(configRef, { faviconUrl }, { merge: true });
+        revalidatePath('/dashboard', 'layout');
+        return { success: true, message: 'Favicon actualizado con éxito.' };
+    } catch (error: any) {
+        return { success: false, message: `Error al guardar el favicon: ${error.message}` };
     }
 }
 
@@ -420,7 +431,7 @@ export async function revertExtraWeekPaymentsAction() {
 
         if (totalToRevert > 0) {
             const walletRef = doc(db, 'wallet', 'main');
-            batch.update(walletRef, { balance: increment(-totalToRevert) });
+            batch.set(walletRef, { balance: increment(-totalToRevert) }, { merge: true });
             
             // Auditoría: Registrar la salida de dinero
             const auditTxRef = doc(collection(db, 'walletTransactions'));

@@ -14,6 +14,12 @@ export default async function LoginPage() {
     const logoUrl = config?.logoUrl;
     const appName = config?.appName || 'CrediControl';
 
+  const isVideoUrl = (url: string | null | undefined) => {
+    if (!url) return false;
+    const cleanUrl = url.split('?')[0].toLowerCase();
+    return cleanUrl.endsWith('.mp4') || url.includes('.mp4') || url.includes('video') || url.includes('mp4');
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-tr from-sky-100/50 via-background to-blue-100/30 px-4 relative overflow-hidden">
       {/* Animated glowing decorative background shapes */}
@@ -28,14 +34,22 @@ export default async function LoginPage() {
                     <div className="relative group">
                         {/* Soft glow behind the logo */}
                         <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-md scale-95 group-hover:scale-105 transition-transform duration-500" />
-                        <Image 
-                          src={logoUrl} 
-                          alt="Logo" 
-                          width={200} 
-                          height={200} 
-                          className="h-40 w-40 object-contain rounded-3xl border border-white/80 shadow-lg bg-white/95 p-3 relative z-10 hover:scale-105 hover:rotate-1 transition-all duration-500 animate-float"
-                          priority
-                        />
+                        {isVideoUrl(logoUrl) ? (
+                            <video
+                              src={logoUrl}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="h-24 w-64 object-cover rounded-3xl border border-white/80 shadow-lg bg-white/95 relative z-10 hover:scale-105 transition-all duration-500 animate-float"
+                            />
+                        ) : (
+                            <img 
+                              src={logoUrl} 
+                              alt="Logo" 
+                              className="h-24 w-64 object-cover rounded-3xl border border-white/80 shadow-lg bg-white/95 relative z-10 hover:scale-105 hover:rotate-1 transition-all duration-500 animate-float"
+                            />
+                        )}
                     </div>
                 )}
                 <div className="space-y-1">

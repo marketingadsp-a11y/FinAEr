@@ -112,6 +112,7 @@ export type WhatsAppTemplates = {
 export type AppConfig = {
   appName?: string;
   logoUrl?: string;
+  faviconUrl?: string;
   whatsappTemplate?: string; // Mantener por compatibilidad con default client
   whatsappTemplates?: Record<string, WhatsAppTemplates>; // PlazaId -> Templates
 };

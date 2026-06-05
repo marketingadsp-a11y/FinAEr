@@ -12,10 +12,16 @@ interface LogoProps {
 
 export function Logo({ className, logoUrl, appName = 'CrediControl', size = 'md' }: LogoProps) {
   const dimensions = {
-    sm: 'h-7 w-7',
-    md: 'h-9 w-9',
-    lg: 'h-16 w-16',
-    xl: 'h-32 w-32'
+    sm: 'h-7 w-20',
+    md: 'h-9 w-28',
+    lg: 'h-16 w-44',
+    xl: 'h-24 w-64'
+  };
+
+  const isVideoUrl = (url: string | null | undefined) => {
+    if (!url) return false;
+    const cleanUrl = url.split('?')[0].toLowerCase();
+    return cleanUrl.endsWith('.mp4') || url.includes('.mp4') || url.includes('video') || url.includes('mp4');
   };
 
   return (
@@ -26,16 +32,26 @@ export function Logo({ className, logoUrl, appName = 'CrediControl', size = 'md'
       )}
     >
       <div className={cn(
-        "relative overflow-hidden rounded-lg border border-border/40 bg-white shadow-[0_2px_5px_-1px_rgba(0,0,0,0.1)] transition-transform group-hover:scale-105 group-active:scale-95",
+        "relative overflow-hidden rounded-lg border border-border/40 bg-white shadow-[0_2px_5px_-1px_rgba(0,0,0,0.1)] transition-transform group-hover:scale-105 group-active:scale-95 flex items-center justify-center",
         dimensions[size as keyof typeof dimensions]
       )}>
         {logoUrl ? (
-          <Image 
-            src={logoUrl} 
-            alt="Logo" 
-            fill
-            className="object-contain p-1" 
-          />
+          isVideoUrl(logoUrl) ? (
+            <video
+              src={logoUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <img 
+              src={logoUrl} 
+              alt="Logo" 
+              className="h-full w-full object-cover" 
+            />
+          )
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary">
             <CreditCard className={cn(size === 'sm' ? 'h-3.5 w-3.5' : size === 'xl' ? 'h-12 w-12' : 'h-5 w-5')} />
