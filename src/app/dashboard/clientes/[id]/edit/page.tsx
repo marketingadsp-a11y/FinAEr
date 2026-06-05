@@ -2,8 +2,9 @@ import { notFound } from 'next/navigation';
 import { getClient } from '@/lib/firestore-data';
 import { ClientForm } from '@/components/client-form';
 
-export default async function EditClientPage({ params }: { params: { id: string } }) {
-  const client = await getClient(params.id);
+export default async function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const client = await getClient(resolvedParams.id);
 
   if (!client) {
     notFound();

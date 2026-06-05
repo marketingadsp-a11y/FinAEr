@@ -132,3 +132,27 @@ body {
     transform: translateY(-10px) rotate(2deg);
   }
 }
+
+@keyframes float-money {
+  0% {
+    transform: translateY(105vh) rotate(0deg) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--op, 0.15);
+  }
+  90% {
+    opacity: var(--op, 0.15);
+  }
+  100% {
+    transform: translateY(-10vh) rotate(var(--rot, 360deg)) translateX(var(--drift, 50px));
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .animate-float-money {
+    animation: float-money var(--dur, 12s) linear infinite;
+    animation-delay: var(--delay, 0s);
+  }
+}

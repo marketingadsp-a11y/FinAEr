@@ -8,6 +8,7 @@ import {
 import { getAppConfig } from '@/lib/firestore-data';
 import Image from 'next/image';
 import { LoginForm } from './login-form';
+import { FloatingDollars } from './floating-dollars';
 
 export default async function LoginPage() {
     const config = await getAppConfig();
@@ -25,6 +26,9 @@ export default async function LoginPage() {
       {/* Animated glowing decorative background shapes */}
       <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] rounded-full bg-primary/20 blur-3xl animate-pulse pointer-events-none" style={{ animationDuration: '8s' }} />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] rounded-full bg-blue-300/20 blur-3xl animate-float pointer-events-none" />
+
+      {/* Floating Dollar Signs Animation */}
+      <FloatingDollars />
 
       {/* Glassmorphic login card with entry fade & slide up animations */}
       <Card className="w-full max-w-sm bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
