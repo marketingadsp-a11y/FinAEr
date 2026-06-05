@@ -1,9 +1,9 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyDDTxRkh1F3ugKhJ98GvggrM20hiHSXelI",
-  authDomain: "finaer-c279b.firebaseapp.com",
-  projectId: "finaer-c279b",
-  storageBucket: "finaer-c279b.firebasestorage.app",
-  messagingSenderId: "584295788487",
-  appId: "1:584295788487:web:90e07c209954c4d4e133e2",
-  measurementId: "G-J2L5J8MFH8"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
