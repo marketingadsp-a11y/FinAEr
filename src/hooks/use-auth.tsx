@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, createContext, useContext } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, reinitializeFirebase } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
@@ -32,9 +32,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [configLoading, setConfigLoading] = useState(true);
+  const [isConfigured, setIsConfigured] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    async function checkConfig() {
+      try {
+        const res = await fetch('/api/firebase-config');
+        const data = await res.json();
+        if (data.configured) {
+          reinitializeFirebase(data.config);
+          setIsConfigured(true);
+          setConfigLoading(false);
+        } else {
+          setIsConfigured(false);
+          setConfigLoading(false);
+          setLoading(false);
+          
+          if (window.location.pathname !== '/instalacion') {
+            window.location.href = '/instalacion';
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching Firebase config:', error);
+        setConfigLoading(false);
+        setLoading(false);
+      }
+    }
+    checkConfig();
+  }, []);
+
+  useEffect(() => {
+    if (!isConfigured) return;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -101,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isConfigured]);
 
   const signUp = async (email: string, password: string, role: 'admin' | 'supervisor', username: string, permissions: AppUser['permissions']) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -131,6 +162,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
   };
+
+  if (configLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-emerald-500/20 border-t-emerald-500"></div>
+          <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em] animate-pulse">Iniciando Servidor...</p>
+        </div>
+      </div>
+    );
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
