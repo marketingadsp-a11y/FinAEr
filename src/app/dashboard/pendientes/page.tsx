@@ -39,41 +39,59 @@ export default async function OverduePortfolioPage() {
             const rawCurrentLoanWeek = Math.max(1, Math.floor((daysDiff - 1) / 7) + 1);
             
             let missedCount = 0;
-            let baseArrears = 0;
-
-            // Calcular fallos reales (semanas que ya concluyeron y no tienen pago completo)
             for (let i = 1; i <= baseTerm; i++) {
                 if (i < rawCurrentLoanWeek) {
                     const p = loan.payments.find(pay => pay.weekNumber === i);
-                    const amountPaid = p ? p.amount : 0;
-                    
-                    if (amountPaid < weeklyPayment) {
-                        missedCount++;
-                        baseArrears += (weeklyPayment - amountPaid);
-                    }
+                    if (!p || p.amount < weeklyPayment) missedCount++;
                 }
             }
 
             // REGLA PENDIENTES: 2 o más fallos activa penalización
             const hasPenalty = missedCount >= 2;
-            let penaltyArrear = 0;
-            if (hasPenalty) {
-                const penaltyWeekNum = baseTerm + 1;
-                const pExtra = loan.payments.find(pay => pay.weekNumber === penaltyWeekNum);
-                penaltyArrear = weeklyPayment - (pExtra?.amount || 0);
-            }
+            
+            const baseTermExpected = baseTerm * weeklyPayment;
+            const baseTermPaid = (loan.payments || [])
+                .filter(p => p.weekNumber >= 1 && p.weekNumber <= baseTerm)
+                .reduce((acc, p) => acc + p.amount, 0);
 
-            const calculatedTotalDue = baseArrears + penaltyArrear;
+            const penaltyExpected = hasPenalty ? weeklyPayment : 0;
+            const penaltyPaid = (loan.payments || [])
+                .filter(p => p.weekNumber > baseTerm)
+                .reduce((acc, p) => acc + p.amount, 0);
+
+            const generalPaid = (loan.payments || [])
+                .filter(p => p.weekNumber <= 0)
+                .reduce((acc, p) => acc + p.amount, 0);
+
+            const totalPaid = baseTermPaid + penaltyPaid + generalPaid;
+            const totalExpected = baseTermExpected + penaltyExpected;
+            const totalDue = Math.max(0, totalExpected - totalPaid);
+
+            const baseArrearsRaw = Math.max(0, baseTermExpected - baseTermPaid);
+            const penaltyArrearRaw = Math.max(0, penaltyExpected - penaltyPaid);
+
+            const baseOverpayment = Math.max(0, baseTermPaid - baseTermExpected);
+            const penaltyOverpayment = Math.max(0, penaltyPaid - penaltyExpected);
+
+            let baseArrears = Math.max(0, baseArrearsRaw - penaltyOverpayment);
+            let penaltyArrear = Math.max(0, penaltyArrearRaw - baseOverpayment);
+
+            if (generalPaid > 0) {
+                const appliedToPenalty = Math.min(penaltyArrear, generalPaid);
+                penaltyArrear -= appliedToPenalty;
+                const remainingGeneral = generalPaid - appliedToPenalty;
+                baseArrears = Math.max(0, baseArrears - remainingGeneral);
+            }
 
             // IMPORTANTE: Un préstamo en esta sección debe estar vigente (no expirado)
             const isExpired = rawCurrentLoanWeek > baseTerm;
 
-            if (!isExpired && missedCount >= 2 && calculatedTotalDue > 0) {
+            if (!isExpired && missedCount >= 2 && totalDue > 0) {
                 return {
                     loan,
                     client,
                     loanPlan,
-                    amountDue: calculatedTotalDue,
+                    amountDue: totalDue,
                     baseArrears,
                     penaltyArrear,
                     missedPayments: missedCount,

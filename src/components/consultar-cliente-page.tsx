@@ -192,30 +192,51 @@ export function ConsultarClientePage({ clients: allClients, loans: allLoans, loa
     const isExpired = currentWeekSafe > baseTerm;
 
     let registeredMissedCount = 0;
-    let baseArrears = 0;
-    
-    (activeLoan.payments || []).forEach(p => {
-        if (p.weekNumber > 0 && p.weekNumber <= baseTerm && p.amount < weeklyPayment) {
-            registeredMissedCount++;
-            baseArrears += (weeklyPayment - p.amount);
+    for (let i = 1; i <= baseTerm; i++) {
+        if (i < currentWeekSafe) {
+            const p = (activeLoan.payments || []).find(pay => pay.weekNumber === i);
+            if (!p || p.amount < weeklyPayment) {
+                registeredMissedCount++;
+            }
         }
-    });
+    }
 
     const hasPenalty = isExpired || (registeredMissedCount >= 2);
     const totalTerm = baseTerm + (hasPenalty ? 1 : 0);
 
-    const actualTotalPaid = (activeLoan.payments || []).reduce((acc, p) => acc + p.amount, 0);
-    
-    let assumedPaidAmount = 0;
-    for (let i = 1; i < currentWeekSafe; i++) {
-        if (i > baseTerm) break; 
-        const p = (activeLoan.payments || []).find(pay => pay.weekNumber === i);
-        if (!p) {
-            assumedPaidAmount += weeklyPayment;
-        }
-    }
+    const baseTermExpected = baseTerm * weeklyPayment;
+    const baseTermPaid = (activeLoan.payments || [])
+        .filter(p => p.weekNumber >= 1 && p.weekNumber <= baseTerm)
+        .reduce((acc, p) => acc + p.amount, 0);
 
-    const totalBalanceDue = Math.max(0, (totalTerm * weeklyPayment) - actualTotalPaid - assumedPaidAmount);
+    const penaltyExpected = hasPenalty ? weeklyPayment : 0;
+    const penaltyPaid = (activeLoan.payments || [])
+        .filter(p => p.weekNumber > baseTerm)
+        .reduce((acc, p) => acc + p.amount, 0);
+
+    const generalPaid = (activeLoan.payments || [])
+        .filter(p => p.weekNumber <= 0)
+        .reduce((acc, p) => acc + p.amount, 0);
+
+    const totalPaid = baseTermPaid + penaltyPaid + generalPaid;
+    const totalExpected = baseTermExpected + penaltyExpected;
+    const totalDue = Math.max(0, totalExpected - totalPaid);
+
+    const baseArrearsRaw = Math.max(0, baseTermExpected - baseTermPaid);
+    const penaltyArrearRaw = Math.max(0, penaltyExpected - penaltyPaid);
+
+    const baseOverpayment = Math.max(0, baseTermPaid - baseTermExpected);
+    const penaltyOverpayment = Math.max(0, penaltyPaid - penaltyExpected);
+
+    let baseArrears = Math.max(0, baseArrearsRaw - penaltyOverpayment);
+    let penaltyArrear = Math.max(0, penaltyArrearRaw - baseOverpayment);
+
+    if (generalPaid > 0) {
+        const appliedToPenalty = Math.min(penaltyArrear, generalPaid);
+        penaltyArrear -= appliedToPenalty;
+        const remainingGeneral = generalPaid - appliedToPenalty;
+        baseArrears = Math.max(0, baseArrears - remainingGeneral);
+    }
 
     const lastPaymentWeek = (activeLoan.payments || []).reduce((max, p) => Math.max(max, p.weekNumber), 0);
     const currentLoanWeekDisplay = lastPaymentWeek > 0 ? Math.min(lastPaymentWeek, totalTerm) : 1;
@@ -229,8 +250,11 @@ export function ConsultarClientePage({ clients: allClients, loans: allLoans, loa
       weeklyPayment,
       currentLoanWeek: currentLoanWeekDisplay,
       termInWeeks: totalTerm,
+      baseArrearsRaw,
       baseArrears,
-      totalBalance: totalBalanceDue,
+      penaltyExpected,
+      extraPaid: penaltyPaid + generalPaid,
+      totalBalance: totalDue,
       missedWeeks: registeredMissedCount,
       hasPenalty,
       isExpired,
@@ -573,8 +597,20 @@ export function ConsultarClientePage({ clients: allClients, loans: allLoans, loa
                                     <div className="bg-zinc-100/80 rounded-2xl p-4 md:p-6 space-y-4 border border-zinc-200/50">
                                         <div className="flex justify-between items-center px-2">
                                             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider">Saldo de Fallos</span>
-                                            <span className="text-base font-black text-zinc-800">{activeLoanDetails ? formatCurrency(activeLoanDetails.baseArrears) : '$0.00'}</span>
+                                            <span className="text-base font-black text-zinc-800">{activeLoanDetails ? formatCurrency(activeLoanDetails.baseArrearsRaw) : '$0.00'}</span>
                                         </div>
+                                        {activeLoanDetails?.hasPenalty && (
+                                            <div className="flex justify-between items-center px-2">
+                                                <span className="text-[9px] font-black text-orange-600 uppercase tracking-wider">Semana Extra</span>
+                                                <span className="text-base font-black text-orange-600">+{activeLoanDetails ? formatCurrency(activeLoanDetails.penaltyExpected) : '$0.00'}</span>
+                                            </div>
+                                        )}
+                                        {activeLoanDetails && activeLoanDetails.extraPaid > 0 && (
+                                            <div className="flex justify-between items-center px-2">
+                                                <span className="text-[9px] font-black text-green-600 uppercase tracking-wider">Abonos Extra/CV</span>
+                                                <span className="text-base font-black text-green-600">-{formatCurrency(activeLoanDetails.extraPaid)}</span>
+                                            </div>
+                                        )}
                                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end pt-4 border-t border-zinc-200 px-2 gap-2">
                                             <div className="space-y-0.5">
                                                 <span className="text-[10px] font-black text-red-700 uppercase tracking-widest block">Total a Liquidar</span>

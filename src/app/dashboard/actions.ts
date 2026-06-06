@@ -157,13 +157,73 @@ export async function registerPaymentAction(loanId: string, paymentStartDate: Da
                 date: parseFirestoreDate(p.date).toISOString()
             }));
 
-            // Reemplazar o añadir el pago de la semana específica
+            const baseTerm = loanPlan.termInWeeks;
+
+            // Reemplazar o añadir el pago de la semana específica con la cuota base
+            const baseAmount = Math.min(amountPaid, weeklyPayment);
+            let excess = Math.max(0, amountPaid - weeklyPayment);
+
             const allPayments = currentPayments.filter(p => p.weekNumber !== startingWeekNumber);
             allPayments.push({
                 date: new Date().toISOString(),
-                amount: amountPaid,
+                amount: baseAmount,
                 weekNumber: startingWeekNumber
             });
+
+            if (excess > 0) {
+                // 1. Distribuir el exceso a la primera semana de fallo disponible
+                for (let w = 1; w <= baseTerm; w++) {
+                    if (excess <= 0) break;
+                    if (w === startingWeekNumber) continue;
+
+                    const p = allPayments.find(pay => pay.weekNumber === w);
+                    const currentAmount = p ? p.amount : 0;
+
+                    if (currentAmount < weeklyPayment) {
+                        const needed = weeklyPayment - currentAmount;
+                        const applied = Math.min(excess, needed);
+                        excess -= applied;
+
+                        if (p) {
+                            p.amount += applied;
+                            p.isFailureCoverage = true;
+                            p.date = new Date().toISOString();
+                        } else {
+                            allPayments.push({
+                                date: new Date().toISOString(),
+                                amount: applied,
+                                weekNumber: w,
+                                isFailureCoverage: true
+                            });
+                        }
+                    }
+                }
+
+                // 2. Si todavía queda exceso, se adelanta a las siguientes semanas
+                let nextWeek = startingWeekNumber + 1;
+                while (excess > 0) {
+                    const p = allPayments.find(pay => pay.weekNumber === nextWeek);
+                    const currentAmount = p ? p.amount : 0;
+
+                    if (currentAmount < weeklyPayment) {
+                        const needed = weeklyPayment - currentAmount;
+                        const applied = Math.min(excess, needed);
+                        excess -= applied;
+
+                        if (p) {
+                            p.amount += applied;
+                            p.date = new Date().toISOString();
+                        } else {
+                            allPayments.push({
+                                date: new Date().toISOString(),
+                                amount: applied,
+                                weekNumber: nextWeek
+                            });
+                        }
+                    }
+                    nextWeek++;
+                }
+            }
             
             const today = new Date();
             const loanStartDate = parseFirestoreDate(loan.startDate);
@@ -189,7 +249,7 @@ export async function registerPaymentAction(loanId: string, paymentStartDate: Da
                 transaction.set(walletRef, { balance: increment(walletAdjustment) }, { merge: true });
             }
 
-            const baseTerm = loanPlan.termInWeeks;
+
             
             // REGLA UNIFICADA DE CARTERA VENCIDA Y PENALIZACIÓN
             let missedCount = 0;

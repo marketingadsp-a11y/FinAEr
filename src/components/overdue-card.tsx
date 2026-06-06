@@ -111,12 +111,39 @@ export function OverdueCard({ details, allClients, allLoanPlans, plazaColor, isO
 
         const hasPenalty = isExpired || (missedCount >= 2);
         
-        const totalPaid = (loan.payments || []).reduce((acc, p) => acc + p.amount, 0);
-        const totalExpected = (baseTerm + (hasPenalty ? 1 : 0)) * weeklyPayment;
+        const baseTermExpected = baseTerm * weeklyPayment;
+        const baseTermPaid = (loan.payments || [])
+            .filter(p => p.weekNumber >= 1 && p.weekNumber <= baseTerm)
+            .reduce((acc, p) => acc + p.amount, 0);
+
+        const penaltyExpected = hasPenalty ? weeklyPayment : 0;
+        const penaltyPaid = (loan.payments || [])
+            .filter(p => p.weekNumber > baseTerm)
+            .reduce((acc, p) => acc + p.amount, 0);
+
+        const generalPaid = (loan.payments || [])
+            .filter(p => p.weekNumber <= 0)
+            .reduce((acc, p) => acc + p.amount, 0);
+
+        const totalPaid = baseTermPaid + penaltyPaid + generalPaid;
+        const totalExpected = baseTermExpected + penaltyExpected;
         const totalDue = Math.max(0, totalExpected - totalPaid);
 
-        const baseArrears = Math.max(0, (baseTerm * weeklyPayment) - totalPaid);
-        const penaltyArrear = totalDue - baseArrears;
+        const baseArrearsRaw = Math.max(0, baseTermExpected - baseTermPaid);
+        const penaltyArrearRaw = Math.max(0, penaltyExpected - penaltyPaid);
+
+        const baseOverpayment = Math.max(0, baseTermPaid - baseTermExpected);
+        const penaltyOverpayment = Math.max(0, penaltyPaid - penaltyExpected);
+
+        let baseArrears = Math.max(0, baseArrearsRaw - penaltyOverpayment);
+        let penaltyArrear = Math.max(0, penaltyArrearRaw - baseOverpayment);
+
+        if (generalPaid > 0) {
+            const appliedToPenalty = Math.min(penaltyArrear, generalPaid);
+            penaltyArrear -= appliedToPenalty;
+            const remainingGeneral = generalPaid - appliedToPenalty;
+            baseArrears = Math.max(0, baseArrears - remainingGeneral);
+        }
 
         return {
             weeklyPayment,
@@ -124,6 +151,9 @@ export function OverdueCard({ details, allClients, allLoanPlans, plazaColor, isO
             currentProgressWeek: Math.min(rawCurrentLoanWeek, baseTerm + (hasPenalty ? 1 : 0)),
             loanWeekDate: getSaturdayOfWeek(loanStartDate),
             hasPenalty,
+            baseArrearsRaw,
+            penaltyExpected,
+            extraPaid: penaltyPaid + generalPaid,
             baseArrears,
             penaltyArrear,
             totalDue,
@@ -195,6 +225,7 @@ export function OverdueCard({ details, allClients, allLoanPlans, plazaColor, isO
                 importeRecibido: isRegistered ? payment.amount : 0,
                 statusText: statusText,
                 isPenalty: i > loanPlan.termInWeeks,
+                isFailureCoverage: payment?.isFailureCoverage || false,
                 status: statusType
             });
         }
@@ -340,15 +371,21 @@ export function OverdueCard({ details, allClients, allLoanPlans, plazaColor, isO
                         </div>
 
                         <div className="text-right bg-red-50 px-3 py-2 rounded-md border border-red-100 min-w-[140px] shadow-inner">
-                            <div className="flex flex-col">
+                            <div className="flex flex-col space-y-0.5">
                                 <div className="flex justify-between items-center gap-4 text-[9px] font-bold text-zinc-500 uppercase">
                                     <span>Saldo Fallos:</span>
-                                    <span>{formatCurrency(metrics.baseArrears)}</span>
+                                    <span>{formatCurrency(metrics.baseArrearsRaw)}</span>
                                 </div>
                                 {metrics.hasPenalty && (
-                                    <div className="flex justify-between items-center gap-4 text-[9px] font-bold text-orange-600 uppercase border-b border-orange-200 pb-1 mb-1">
+                                    <div className="flex justify-between items-center gap-4 text-[9px] font-bold text-orange-600 uppercase">
                                         <span>Semana Extra:</span>
-                                        <span>+{formatCurrency(metrics.penaltyArrear)}</span>
+                                        <span>+{formatCurrency(metrics.penaltyExpected)}</span>
+                                    </div>
+                                )}
+                                {metrics.extraPaid > 0 && (
+                                    <div className="flex justify-between items-center gap-4 text-[9px] font-bold text-green-600 uppercase border-b border-zinc-200 pb-1 mb-1">
+                                        <span>Abonado Extra/CV:</span>
+                                        <span>-{formatCurrency(metrics.extraPaid)}</span>
                                     </div>
                                 )}
                                 <span className="text-[7px] font-black text-red-600 uppercase leading-none mb-0.5 mt-1">Total a Deber</span>
@@ -417,12 +454,18 @@ export function OverdueCard({ details, allClients, allLoanPlans, plazaColor, isO
                                     <div className="p-4 rounded-md border bg-white space-y-2 shadow-inner">
                                         <div className="flex justify-between items-center text-xs">
                                             <span className="font-bold text-muted-foreground uppercase text-[8px]">Suma de Fallos</span>
-                                            <span className="font-black text-zinc-800">{formatCurrency(metrics.baseArrears)}</span>
+                                            <span className="font-black text-zinc-800">{formatCurrency(metrics.baseArrearsRaw)}</span>
                                         </div>
                                         {metrics.hasPenalty && (
-                                            <div className="flex justify-between items-center text-xs border-b border-dashed border-zinc-200 pb-2">
+                                            <div className="flex justify-between items-center text-xs">
                                                 <span className="font-bold text-orange-600 uppercase text-[8px]">Semana Extra</span>
-                                                <span className="font-black text-orange-600">+{formatCurrency(metrics.penaltyArrear)}</span>
+                                                <span className="font-black text-orange-600">+{formatCurrency(metrics.penaltyExpected)}</span>
+                                            </div>
+                                        )}
+                                        {metrics.extraPaid > 0 && (
+                                            <div className="flex justify-between items-center text-xs border-b border-dashed border-zinc-200 pb-2">
+                                                <span className="font-bold text-green-600 uppercase text-[8px]">Abonado Extra/CV</span>
+                                                <span className="font-black text-green-600">-{formatCurrency(metrics.extraPaid)}</span>
                                             </div>
                                         )}
                                         <div className="flex justify-between items-center pt-1">
@@ -560,6 +603,118 @@ export function OverdueCard({ details, allClients, allLoanPlans, plazaColor, isO
                     }}
                 />
             )}
+
+            <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+                <DialogContent className="max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden sm:rounded-md">
+                    <DialogHeader className="px-4 py-3 border-b shrink-0 flex flex-row items-center justify-between bg-muted/10">
+                        <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8 border shadow-sm rounded-md">
+                                <AvatarImage src={client.avatarUrl} alt={client.name} />
+                                <AvatarFallback className="font-black text-[10px] bg-blue-100 text-blue-700 rounded-md">
+                                    {client.name.charAt(0)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <DialogTitle className="text-xs font-black uppercase leading-none tracking-tight">
+                                    Estado de Cuenta
+                                </DialogTitle>
+                                <p className="text-[8px] font-black uppercase text-zinc-500 mt-0.5">
+                                    {client.name}
+                                </p>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <ScrollArea className="flex-1 overflow-y-auto p-3">
+                        <div className="border rounded-md overflow-hidden bg-white shadow-sm">
+                            <Table>
+                                <TableHeader className="bg-zinc-50">
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead className="text-[8px] font-black uppercase tracking-wider text-center w-[50px] h-8 p-1">Sem</TableHead>
+                                        <TableHead className="text-[8px] font-black uppercase tracking-wider text-center h-8 p-1">Vence</TableHead>
+                                        <TableHead className="text-[8px] font-black uppercase tracking-wider text-right h-8 p-1">Esperado</TableHead>
+                                        <TableHead className="text-[8px] font-black uppercase tracking-wider text-right h-8 p-1">Abonado</TableHead>
+                                        <TableHead className="text-[8px] font-black uppercase tracking-wider text-center h-8 p-1">Estatus</TableHead>
+                                        {isCristobal && <TableHead className="w-[40px] h-8 p-1"></TableHead>}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {loanHistoryData.map((row) => (
+                                        <TableRow 
+                                            key={row.num}
+                                            className={cn(
+                                                "hover:bg-zinc-50/50 transition-colors",
+                                                row.isPenalty && "bg-orange-50/20 hover:bg-orange-50/40"
+                                            )}
+                                        >
+                                            <TableCell className="text-center font-bold text-[10px] p-1.5">
+                                                {row.isPenalty ? (
+                                                    <span className="text-[7px] font-black text-orange-700 bg-orange-100/50 px-1 py-0.5 rounded-sm uppercase tracking-wide">
+                                                        Extra
+                                                    </span>
+                                                ) : (
+                                                    row.num
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-center text-[9px] font-bold text-zinc-500 p-1.5">
+                                                {row.vencimiento}
+                                            </TableCell>
+                                            <TableCell className="text-right text-[10px] font-black text-zinc-600 p-1.5">
+                                                {formatCurrency(row.importeAbono)}
+                                            </TableCell>
+                                            <TableCell className="text-right text-[10px] font-black text-zinc-800 p-1.5">
+                                                {formatCurrency(row.importeRecibido)}
+                                            </TableCell>
+                                            <TableCell className="text-center p-1.5">
+                                                {row.isFailureCoverage ? (
+                                                    <Badge className="bg-purple-50 text-purple-700 border border-purple-200 text-[7px] font-black hover:bg-purple-50 uppercase px-1 py-0.2 rounded-sm shadow-sm" title={`Abonado el ${row.statusText}`}>
+                                                        CUBRIÓ FALLO
+                                                    </Badge>
+                                                ) : row.status === 'PAID' ? (
+                                                    <Badge className="bg-green-50 text-green-700 border border-green-200 text-[7px] font-black hover:bg-green-50 uppercase px-1 py-0.2 rounded-sm shadow-sm">
+                                                        {row.statusText}
+                                                    </Badge>
+                                                ) : row.status === 'MISSED' ? (
+                                                    <Badge variant="destructive" className="text-[7px] font-black uppercase px-1 py-0.2 rounded-sm shadow-sm">
+                                                        {row.statusText}
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline" className="text-zinc-500 border-zinc-200 text-[7px] font-black uppercase px-1 py-0.2 rounded-sm shadow-sm">
+                                                        {row.statusText}
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                            {isCristobal && (
+                                                <TableCell className="text-center p-1.5">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        onClick={() => handleAdjustClick(row.num, row.importeRecibido)}
+                                                        className="h-5 w-5 text-zinc-400 hover:text-blue-600 hover:bg-zinc-100 rounded-md"
+                                                    >
+                                                        <PencilLine className="h-3 w-3" />
+                                                    </Button>
+                                                </TableCell>
+                                            )}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </ScrollArea>
+
+                    <div className="p-2 bg-muted/20 border-t flex justify-end gap-2 shrink-0">
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setHistoryDialogOpen(false)} 
+                            className="font-black uppercase text-[9px] tracking-widest px-4 h-8 rounded-md border-zinc-300 bg-white"
+                        >
+                            Cerrar
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

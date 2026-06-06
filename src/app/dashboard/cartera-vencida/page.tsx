@@ -63,14 +63,41 @@ export default async function CarteraVencidaPage() {
             
             // REGLA DE ORO: En Cartera Vencida la penalización es SIEMPRE obligatoria
             const hasPenalty = true;
-            const totalExpected = (baseTerm + 1) * weeklyPayment;
+
+            const baseTermExpected = baseTerm * weeklyPayment;
+            const baseTermPaid = (loan.payments || [])
+                .filter(p => p.weekNumber >= 1 && p.weekNumber <= baseTerm)
+                .reduce((acc, p) => acc + p.amount, 0);
+
+            const penaltyExpected = weeklyPayment;
+            const penaltyPaid = (loan.payments || [])
+                .filter(p => p.weekNumber > baseTerm)
+                .reduce((acc, p) => acc + p.amount, 0);
+
+            const generalPaid = (loan.payments || [])
+                .filter(p => p.weekNumber <= 0)
+                .reduce((acc, p) => acc + p.amount, 0);
+
+            const totalExpected = baseTermExpected + penaltyExpected;
             const totalDue = Math.max(0, totalExpected - totalPaid);
 
             if (totalDue <= 0) return null;
 
-            // Cálculo en cascada para el desglose visual
-            const baseArrears = Math.max(0, (baseTerm * weeklyPayment) - totalPaid);
-            const penaltyArrear = totalDue - baseArrears;
+            const baseArrearsRaw = Math.max(0, baseTermExpected - baseTermPaid);
+            const penaltyArrearRaw = Math.max(0, penaltyExpected - penaltyPaid);
+
+            const baseOverpayment = Math.max(0, baseTermPaid - baseTermExpected);
+            const penaltyOverpayment = Math.max(0, penaltyPaid - penaltyExpected);
+
+            let baseArrears = Math.max(0, baseArrearsRaw - penaltyOverpayment);
+            let penaltyArrear = Math.max(0, penaltyArrearRaw - baseOverpayment);
+
+            if (generalPaid > 0) {
+                const appliedToPenalty = Math.min(penaltyArrear, generalPaid);
+                penaltyArrear -= appliedToPenalty;
+                const remainingGeneral = generalPaid - appliedToPenalty;
+                baseArrears = Math.max(0, baseArrears - remainingGeneral);
+            }
 
             // Conteo de fallos reales para el reporte
             let missedCount = 0;
